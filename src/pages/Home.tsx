@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, Sparkles } from 'lucide-react';
 import MainButton from '../components/MainButton';
+import useScrollLock from '../hooks/useScrollLock';
 
 const Home = () => {
   const [isAnimating, setIsAnimating] = useState(false);
+  useScrollLock();
 
   const handleLogoClick = () => {
     setIsAnimating(true);
