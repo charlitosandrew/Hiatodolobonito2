@@ -1,45 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence, useAnimation } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles } from 'lucide-react';
+import { Heart } from 'lucide-react';
 
 const MainButton = () => {
   const navigate = useNavigate();
-  const [isButtonHovered, setIsButtonHovered] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const controls = useAnimation();
+  const [isEmittingHearts, setIsEmittingHearts] = useState(false);
 
   useEffect(() => {
-    // Check if device supports hover
-    const hasHover = window.matchMedia('(hover: hover)').matches;
-    setIsMobile(!hasHover);
+    const interval = setInterval(() => {
+      setIsEmittingHearts(true);
+      setTimeout(() => setIsEmittingHearts(false), 2000);
+    }, 5000);
 
-    // Start automatic animations for mobile
-    if (!hasHover) {
-      const startMobileAnimations = async () => {
-        while (true) {
-          await controls.start({
-            scale: 1.05,
-            transition: { duration: 1.5, ease: "easeInOut" }
-          });
-          await controls.start({
-            scale: 1,
-            transition: { duration: 1.5, ease: "easeInOut" }
-          });
-        }
-      };
-      startMobileAnimations();
-    }
-  }, [controls]);
+    return () => clearInterval(interval);
+  }, []);
 
-  const sparkleVariants = {
-    initial: { opacity: 0, scale: 0 },
-    animate: { 
-      opacity: [0, 1, 0],
-      scale: [0.5, 1.5, 0.5],
-      x: [0, (Math.random() - 0.5) * 100],
-      y: [0, -50 - Math.random() * 50]
-    }
+  const getRandomSpread = () => {
+    const angle = Math.random() * 2 * Math.PI; // Full circle angle
+    const distance = 150 + Math.random() * 200; // Base distance
+    const spread = {
+      x: Math.cos(angle) * distance,
+      y: Math.sin(angle) * distance
+    };
+    
+    // Add extra vertical offset to ensure hearts don't cluster near the button
+    const verticalOffset = 50;
+    spread.y += spread.y > 0 ? verticalOffset : -verticalOffset;
+    
+    return spread;
   };
 
   return (
@@ -56,57 +45,49 @@ const MainButton = () => {
           delay: 0.7
         }
       }}
-      onHoverStart={() => !isMobile && setIsButtonHovered(true)}
-      onHoverEnd={() => !isMobile && setIsButtonHovered(false)}
       className="relative"
     >
-      <AnimatePresence>
-        {(isButtonHovered || isMobile) && (
-          <>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ 
-                opacity: [0.5, 1],
-                scale: [0.95, 1.05],
-                transition: {
-                  duration: 2,
-                  repeat: Infinity,
-                  repeatType: "reverse"
-                }
-              }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              className="absolute inset-0 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full blur-xl"
-            />
-            {[...Array(3)].map((_, i) => (
-              <motion.div
-                key={`sparkle-${i}`}
-                variants={sparkleVariants}
-                initial="initial"
-                animate="animate"
-                transition={{
-                  duration: 1.5,
-                  delay: i * 0.2,
-                  repeat: Infinity,
-                  repeatDelay: 1
-                }}
-                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-              >
-                <Sparkles className="w-4 h-4 text-white/80" />
-              </motion.div>
-            ))}
-          </>
-        )}
-      </AnimatePresence>
+      <div className="absolute inset-0 overflow-visible pointer-events-none">
+        <AnimatePresence>
+          {isEmittingHearts && (
+            <>
+              {[...Array(12)].map((_, i) => {
+                const spread = getRandomSpread();
+                return (
+                  <motion.div
+                    key={`heart-${i}`}
+                    initial={{ opacity: 0, scale: 0, x: 0, y: 0 }}
+                    animate={{ 
+                      opacity: [0, 1, 0],
+                      scale: [0.5, 1, 0],
+                      x: spread.x,
+                      y: spread.y,
+                      rotate: [-10, 10]
+                    }}
+                    transition={{
+                      duration: 2,
+                      delay: i * 0.1,
+                      ease: "easeOut"
+                    }}
+                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50"
+                  >
+                    <Heart className="w-4 h-4 text-pink-100 fill-pink-100" />
+                  </motion.div>
+                );
+              })}
+            </>
+          )}
+        </AnimatePresence>
+      </div>
       
       <motion.button
-        animate={controls}
-        whileHover={!isMobile ? { 
+        whileHover={{ 
           scale: 1.05,
           transition: { type: "spring", stiffness: 400, damping: 10 }
-        } : {}}
+        }}
         whileTap={{ scale: 0.95 }}
         onClick={() => navigate('/conocenos')}
-        className="relative bg-gradient-to-r from-[#FF00AA] to-[#FF00FF] text-white px-12 py-4 rounded-full font-semibold shadow-lg transition-all duration-300 hover:shadow-pink-500/50 overflow-hidden group"
+        className="relative bg-gradient-to-r from-[#FF00AA] to-[#FF00FF] text-white px-12 py-4 rounded-full font-semibold shadow-lg transition-all duration-300 hover:shadow-pink-500/50 overflow-hidden group z-10"
       >
         <motion.div
           className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
@@ -123,14 +104,14 @@ const MainButton = () => {
         />
 
         <motion.span
-          animate={isMobile ? {
+          animate={{
             y: [-1, 1],
             transition: {
               duration: 1.5,
               repeat: Infinity,
               repeatType: "reverse"
             }
-          } : isButtonHovered ? { y: -2 } : { y: 0 }}
+          }}
           className="text-lg relative z-10"
         >
           Saber más
